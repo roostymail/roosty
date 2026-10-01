@@ -46,6 +46,8 @@ for f in $files; do
   body=$(content "$f" 2>/dev/null) || continue
   echo "$body" | grep -nEI -e "$secrets" >/dev/null 2>&1 && report "$f: parece conter um segredo"
   echo "$body" | grep -nEI -e "$leftovers" >/dev/null 2>&1 && report "$f: marcador de debug ou 'não commitar'"
+  # Invisible bidi control characters in source ("Trojan Source", CVE-2021-42574).
+  if echo "$body" | perl -CSD -ne 'exit 1 if /[\x{202A}-\x{202E}\x{2066}-\x{2069}]/' 2>/dev/null; then :; else report "$f: contém caractere invisível de inversão de texto (use o escape \\u202E)"; fi
   if [ -f "$local_patterns" ]; then
     grep -vE '^\s*(#|$)' "$local_patterns" | while IFS= read -r p; do
       if echo "$body" | grep -iqE -- "$p"; then echo "✗ $f: contém termo privado da lista local"; echo x > .git/check-repo-fail; fi

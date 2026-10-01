@@ -354,14 +354,10 @@ func (s *Session) fetchPreview(uids []uint32, pp previewPart) ([]*imapclient.Fet
 		sec.Partial = nil
 	}
 	// Whole-part fallback, only for parts small enough to be cheap.
-	var small []uint32
-	for _, u := range uids {
-		small = append(small, u)
-	}
 	if pp.size > 256<<10 {
 		return nil, fmt.Errorf("part too large for preview")
 	}
-	return s.c.Fetch(toUIDSet(small), &imap.FetchOptions{UID: true, BodySection: []*imap.FetchItemBodySection{sec}}).Collect()
+	return s.c.Fetch(toUIDSet(uids), &imap.FetchOptions{UID: true, BodySection: []*imap.FetchItemBodySection{sec}}).Collect()
 }
 
 func inspectStructure(bs imap.BodyStructure) (*previewPart, bool) {

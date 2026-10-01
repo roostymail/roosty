@@ -1,0 +1,7 @@
+{
+  "name": "@roosty/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node walkthrough.mjs" },
+  "devDependencies": { "puppeteer-core": "25.12.0" }
+}
