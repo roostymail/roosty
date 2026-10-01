@@ -1,8 +1,6 @@
-<p align="center">
-  <img src="docs/assets/logo.svg" width="96" height="96" alt="Roosty Mail logo: a pigeon on a perch">
-</p>
-
-<h1 align="center">Roosty Mail</h1>
+<h1 align="center">
+  <img src="docs/assets/logo-horizontal.png" width="420" alt="Roosty Mail">
+</h1>
 
 <p align="center">
   A lightweight, modern webmail you host yourself.<br>

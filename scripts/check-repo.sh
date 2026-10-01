@@ -43,6 +43,8 @@ local_patterns=".git/info/forbidden-patterns"
 for f in $files; do
   [ -f "$f" ] || continue
   case "$f" in scripts/check-repo.sh|*.sum|web/package-lock.json) continue ;; esac
+  # Content checks apply to text files only (images and other binaries are skipped).
+  content "$f" 2>/dev/null | head -c 8000 | grep -qI . || continue
   body=$(content "$f" 2>/dev/null) || continue
   echo "$body" | grep -nEI -e "$secrets" >/dev/null 2>&1 && report "$f: parece conter um segredo"
   echo "$body" | grep -nEI -e "$leftovers" >/dev/null 2>&1 && report "$f: marcador de debug ou 'não commitar'"
