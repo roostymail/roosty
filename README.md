@@ -10,7 +10,7 @@
 </p>
 
 > [!WARNING]
-> Roosty Mail is in early development and is **not usable yet**. The npm package and container images are name placeholders.
+> Roosty Mail is in early development. The first working version runs locally with Docker, but it is not ready for production mail yet. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) to try it.
 
 ## What it is
 
@@ -36,6 +36,15 @@ It is built for people who run their own mail or use providers such as MXroute, 
 | Real time | IMAP IDLE on the server, Server-Sent Events to the browser |
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design and the trade-offs behind each choice.
+
+## Try it locally
+
+```sh
+git clone https://github.com/roostymail/roosty && cd roosty
+docker compose up --build -d
+```
+
+Then open http://localhost:8080/admin/setup (setup code `roosty-local-setup`) and sign in to the webmail with `marina@roosty.test` / `roosty123`. Details in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Roadmap
 

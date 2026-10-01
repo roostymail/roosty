@@ -1,0 +1,15 @@
+From: Dokploy <no-reply@dokploy.test>
+To: Marina Gonçalves <marina@roosty.test>
+Subject: =?UTF-8?Q?Deploy_conclu=C3=ADdo:_roosty-website?=
+Date: Thu, 01 Oct 2026 08:15:00 -0300
+Message-ID: <deploy-3@dokploy.test>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<table width="100%" style="background-color:#f4f4f5;padding:24px"><tr><td align="center">
+<table width="520" style="background-color:#ffffff;border-radius:12px;padding:28px;font-family:Arial,sans-serif">
+<tr><td><img src="https://placehold.co/120x32/png?text=Dokploy" alt="Dokploy" width="120" height="32"></td></tr>
+<tr><td><h2 style="color:#111827">Deploy concluído</h2><p style="color:#374151">O build <b>#3</b> de <b>roosty-website</b> terminou em 41s sem erros. A aplicação está rodando em roosty.dev.</p>
+<p><a href="https://roosty.dev" style="background-color:#111827;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none">Abrir aplicação</a></p></td></tr>
+</table><img src="https://tracker.example/open.gif?u=marina" width="1" height="1" alt="">
+</td></tr></table>

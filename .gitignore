@@ -1,5 +1,4 @@
 .DS_Store
-/node_modules/
-/dist/
-*.db
-.env
+server/data/
+server/internal/web/dist/*
+!server/internal/web/dist/index.html
