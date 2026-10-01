@@ -218,7 +218,7 @@ func (s *Server) handleAdminLogout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(adminCookie); err == nil {
 		_ = s.st.DeleteAdminSession(c.Value)
 	}
-	http.SetCookie(w, &http.Cookie{Name: adminCookie, Value: "", Path: "/", MaxAge: -1})
+	http.SetCookie(w, &http.Cookie{Name: adminCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: isHTTPS(r), SameSite: http.SameSiteStrictMode})
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 

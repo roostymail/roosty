@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -26,9 +27,9 @@ const maxUpload = 25 << 20
 
 func (s *Server) fetchParsed(r *http.Request) (*mail.Parsed, error) {
 	u := current(r)
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		return nil, err
+	id, err := strconv.ParseUint(r.URL.Query().Get("id"), 10, 32)
+	if err != nil || id == 0 {
+		return nil, fmt.Errorf("id inválido")
 	}
 	var p *mail.Parsed
 	err = s.pool.Do(u.sessionID, u.creds, func(sess *mail.Session) error {
@@ -133,18 +134,48 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, meta)
 }
 
-func (s *Server) loadUpload(sessionID, id string) (mail.OutgoingAttachment, error) {
-	if strings.ContainsAny(id, "/\\.") {
-		return mail.OutgoingAttachment{}, fmt.Errorf("anexo inválido")
+var reUploadID = regexp.MustCompile(`^[A-Za-z0-9_-]{16}$`)
+
+// uploadPath returns the file path of an upload of this session. The ID must
+// look exactly like the ones we generate, and the cleaned path must stay inside
+// the session's upload folder.
+func (s *Server) uploadPath(sessionID, id, suffix string) (string, error) {
+	if !reUploadID.MatchString(id) {
+		return "", fmt.Errorf("anexo inválido")
 	}
-	dir := s.uploadDir(sessionID)
-	raw, err := os.ReadFile(filepath.Join(dir, id+".json"))
+	dir := filepath.Clean(s.uploadDir(sessionID))
+	p := filepath.Clean(filepath.Join(dir, id+suffix))
+	if !strings.HasPrefix(p, dir+string(os.PathSeparator)) {
+		return "", fmt.Errorf("anexo inválido")
+	}
+	return p, nil
+}
+
+func (s *Server) loadUpload(sessionID, id string) (mail.OutgoingAttachment, error) {
+	metaPath, err := s.uploadPath(sessionID, id, ".json")
+	if err != nil {
+		return mail.OutgoingAttachment{}, err
+	}
+	filePath, err := s.uploadPath(sessionID, id, "")
+	if err != nil {
+		return mail.OutgoingAttachment{}, err
+	}
+	raw, err := os.ReadFile(metaPath)
 	if err != nil {
 		return mail.OutgoingAttachment{}, fmt.Errorf("anexo expirou, envie de novo")
 	}
 	var m uploadMeta
 	_ = json.Unmarshal(raw, &m)
-	return mail.OutgoingAttachment{Name: m.Name, Type: m.Type, Path: filepath.Join(dir, id)}, nil
+	return mail.OutgoingAttachment{Name: m.Name, Type: m.Type, Path: filePath}, nil
+}
+
+// removeUpload deletes an upload and its metadata after sending.
+func (s *Server) removeUpload(sessionID, id string) {
+	for _, suffix := range []string{"", ".json"} {
+		if p, err := s.uploadPath(sessionID, id, suffix); err == nil {
+			_ = os.Remove(p)
+		}
+	}
 }
 
 // ---------- image proxy ----------

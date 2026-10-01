@@ -273,3 +273,36 @@ func TestImageProxy_RejectsUnsignedAndPrivate(t *testing.T) {
 		t.Error("cloud metadata address must be refused")
 	}
 }
+
+func TestUploadPath_OnlyGeneratedIDs(t *testing.T) {
+	_, srv := newTestServer(t, "")
+	for _, id := range []string{"../../etc/passwd", "..%2F..%2Fx", "abc", "aaaaaaaaaaaaaaaa/", "aaaaaaaaaaaaaaa.", "aaaaaaaaaaaaaaaa\x00", "AAAAAAAAAAAAAAAAA"} {
+		if _, err := srv.uploadPath("sess", id, ""); err == nil {
+			t.Errorf("id %q accepted", id)
+		}
+	}
+	p, err := srv.uploadPath("sess", "Abc-def_ghij1234", ".json")
+	if err != nil || !strings.HasSuffix(p, "Abc-def_ghij1234.json") {
+		t.Fatalf("valid id refused: %v %s", err, p)
+	}
+}
+
+func TestLogout_ClearsCookiesWithSameAttributes(t *testing.T) {
+	ts, _ := newTestServer(t, "")
+	c := newClient(t, ts.URL)
+	for _, path := range []string{"/api/auth/logout", "/api/admin/logout"} {
+		_, _, h := c.do("POST", path, "{}", true)
+		ck := h.Get("Set-Cookie")
+		for _, want := range []string{"Max-Age=0", "HttpOnly", "SameSite=Strict"} {
+			if !strings.Contains(ck, want) {
+				t.Errorf("%s cookie %q missing %s", path, ck, want)
+			}
+		}
+	}
+}
+
+func TestKnownMethod_KeepsUserTextOutOfLogs(t *testing.T) {
+	if knownMethod("Email/get") != "Email/get" || knownMethod("x\nINFO fake log line") != "unknown" {
+		t.Fatal("unexpected method name in logs")
+	}
+}

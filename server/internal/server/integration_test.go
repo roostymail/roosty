@@ -370,3 +370,18 @@ func TestIT_PrefsRejectMaliciousJSON(t *testing.T) {
 		t.Errorf("unknown batch field accepted: %d", code)
 	}
 }
+
+func TestIT_MessageIDOverflowRejected(t *testing.T) {
+	c := setupIT(t)
+	cl := c.login(c.user1, c.pass1)
+	for _, id := range []string{"-1", "0", "4294967297", "99999999999999999999", "1e3", "abc"} {
+		resp, err := cl.http.Get(c.base + "/api/attachment?m=INBOX&part=1&id=" + id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusNotFound {
+			t.Errorf("id %s: got %d, want 404", id, resp.StatusCode)
+		}
+	}
+}

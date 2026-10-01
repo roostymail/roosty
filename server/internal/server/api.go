@@ -8,8 +8,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -57,7 +55,7 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 				if sess.Closed() {
 					return err
 				}
-				slog.Debug("api method failed", "method", name, "err", err)
+				slog.Debug("api method failed", "method", knownMethod(name))
 				res = methodErr{Error: err.Error()}
 			} else {
 				var generic any
@@ -279,8 +277,7 @@ func (s *Server) dispatch(r *http.Request, u *userCtx, sess *mail.Session, name 
 			}
 		}
 		for _, id := range a.Attachments {
-			_ = os.Remove(filepath.Join(s.uploadDir(u.sessionID), id))
-			_ = os.Remove(filepath.Join(s.uploadDir(u.sessionID), id+".json"))
+			s.removeUpload(u.sessionID, id)
 		}
 		return map[string]bool{"sent": true}, nil
 
@@ -294,6 +291,17 @@ func (s *Server) dispatch(r *http.Request, u *userCtx, sess *mail.Session, name 
 		return map[string]bool{"ok": true}, s.addTrusted(u.creds.Email, a.Email)
 	}
 	return nil, fmt.Errorf("método desconhecido: %s", name)
+}
+
+var methods = map[string]bool{"Mailbox/get": true, "Mailbox/create": true, "Email/query": true, "Email/get": true,
+	"Email/body": true, "Email/set": true, "Email/send": true, "Email/saveDraft": true, "Sender/trust": true}
+
+// knownMethod keeps client-supplied text out of the logs.
+func knownMethod(name string) string {
+	if methods[name] {
+		return name
+	}
+	return "unknown"
 }
 
 func sessCreate(sess *mail.Session, name string) error { return sess.CreateMailbox(name) }
