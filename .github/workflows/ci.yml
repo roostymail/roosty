@@ -15,7 +15,7 @@ concurrency:
 jobs:
   guard:
     name: Repository guard
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Secrets, private data, bidi characters, large files
@@ -23,7 +23,7 @@ jobs:
 
   go:
     name: Go (vet, staticcheck, tests, govulncheck)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: server
@@ -49,7 +49,7 @@ jobs:
 
   integration:
     name: Integration (GreenMail)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       greenmail:
         image: greenmail/standalone:2.1.14
@@ -78,7 +78,7 @@ jobs:
 
   web:
     name: Web (typecheck, build, audit, size)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -98,7 +98,7 @@ jobs:
 
   e2e:
     name: Docker image and browser end-to-end
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [guard]
     steps:
       - uses: actions/checkout@v7
