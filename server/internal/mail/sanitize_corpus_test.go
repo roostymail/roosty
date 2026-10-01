@@ -3,6 +3,7 @@ package mail
 import (
 	"strings"
 	"testing"
+	"unicode"
 
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -87,6 +88,11 @@ var xssCorpus = []string{
 	`<img src="https://evil.example/x.png" srcset="javascript:alert(1) 1x">`,
 	`<a href="#" id="__proto__">x</a>`,
 	`<form id="x"><input name="attributes"></form>`,
+	// found by fuzzing
+	`<A href=http:>`,
+	"<A href=\x11http://0>",
+	"<a href=\"\x01javascript:alert(1)\">x</a>",
+	"<img src=\"\x0bhttps://x.example/a.png\">",
 }
 
 // assertSafe re-parses sanitized output like a browser would and checks every
@@ -121,6 +127,9 @@ func assertSafe(t *testing.T, input, out string) {
 				}
 				if k == "style" && (strings.Contains(v, "url") || strings.Contains(v, "expression") || strings.Contains(v, `\`) || strings.Contains(v, "position")) {
 					t.Errorf("unsafe style %q survived (input %q)", a.Val, input)
+				}
+				if (k == "href" || k == "src") && strings.IndexFunc(a.Val, unicode.IsControl) >= 0 {
+					t.Errorf("control character left in %s=%q (input %q)", k, a.Val, input)
 				}
 				if k == "target" && v != "_blank" {
 					t.Errorf("target %q survived", a.Val)

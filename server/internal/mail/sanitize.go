@@ -246,9 +246,10 @@ func cleanAttr(el atom.Atom, key, val string) (string, bool) {
 	case "style":
 		return cleanStyle(val)
 	case "href":
-		return val, urlScheme(val, "http", "https", "mailto", "tel")
+		u, ok := normalizeURL(val)
+		return u, ok && urlScheme(u, "http", "https", "mailto", "tel")
 	case "src":
-		return val, true // checked in img()
+		return normalizeURL(val) // scheme checked in img()
 	case "bgcolor", "color":
 		return val, safeColor.MatchString(val)
 	case "width", "height", "border", "cellpadding", "cellspacing", "colspan", "rowspan", "span", "start", "value", "size":
@@ -260,6 +261,20 @@ func cleanAttr(el atom.Atom, key, val string) (string, bool) {
 	default: // title, lang, alt
 		return val, len(val) <= 500
 	}
+}
+
+// normalizeURL does what browsers do before using a URL: strip leading and
+// trailing C0 controls and spaces, and remove tabs and newlines anywhere. Any
+// other control character makes the URL invalid.
+func normalizeURL(raw string) (string, bool) {
+	u := strings.TrimFunc(raw, func(r rune) bool { return r <= 0x20 })
+	u = strings.NewReplacer("\t", "", "\n", "", "\r", "").Replace(u)
+	for _, r := range u {
+		if r < 0x20 || r == 0x7f {
+			return "", false
+		}
+	}
+	return u, u != ""
 }
 
 // urlScheme reports whether a URL is absolute with one of the schemes. Browsers
