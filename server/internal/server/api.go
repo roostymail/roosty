@@ -293,13 +293,20 @@ func (s *Server) dispatch(r *http.Request, u *userCtx, sess *mail.Session, name 
 	return nil, fmt.Errorf("método desconhecido: %s", name)
 }
 
-var methods = map[string]bool{"Mailbox/get": true, "Mailbox/create": true, "Email/query": true, "Email/get": true,
-	"Email/body": true, "Email/set": true, "Email/send": true, "Email/saveDraft": true, "Sender/trust": true}
+var methods = map[string]string{}
 
-// knownMethod keeps client-supplied text out of the logs.
+func init() {
+	for _, m := range []string{"Mailbox/get", "Mailbox/create", "Email/query", "Email/get", "Email/body",
+		"Email/set", "Email/send", "Email/saveDraft", "Sender/trust"} {
+		methods[m] = m
+	}
+}
+
+// knownMethod returns our own constant for a method name, so client-supplied
+// text never reaches the logs.
 func knownMethod(name string) string {
-	if methods[name] {
-		return name
+	if m, ok := methods[name]; ok {
+		return m
 	}
 	return "unknown"
 }
