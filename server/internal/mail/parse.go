@@ -56,6 +56,11 @@ func addrList(h gomail.Header, key string) []Address {
 	return out
 }
 
+// stripBOM removes a leading UTF-8 byte order mark from a text part.
+func stripBOM(b []byte) string {
+	return string(bytes.TrimPrefix(b, []byte{0xEF, 0xBB, 0xBF}))
+}
+
 func readLimited(r io.Reader) []byte {
 	b, _ := io.ReadAll(io.LimitReader(r, maxPartSize))
 	return b
@@ -93,14 +98,17 @@ func Parse(r io.Reader) (*Parsed, error) {
 			cid := strings.Trim(ph.Get("Content-Id"), "<> ")
 			switch {
 			case ct == "text/plain" && p.Text == "":
-				p.Text = string(readLimited(part.Body))
+				p.Text = stripBOM(readLimited(part.Body))
 			case ct == "text/html" && p.HTML == "":
-				p.HTML = string(readLimited(part.Body))
+				p.HTML = stripBOM(readLimited(part.Body))
 			case strings.HasPrefix(ct, "text/"):
 				_ = readLimited(part.Body)
 			default:
 				data := readLimited(part.Body)
 				name := params["name"]
+				if name == "" && cid != "" {
+					name = cid
+				}
 				if name == "" {
 					name = "anexo-" + strconv.Itoa(idx)
 				}

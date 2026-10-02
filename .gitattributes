@@ -1,0 +1,2 @@
+# Email fixtures must keep their exact bytes (CRLF vs LF is part of what is tested).
+*.eml -text

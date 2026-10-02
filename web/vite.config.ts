@@ -1,8 +1,10 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [solid()],
+  test: { environment: 'jsdom', include: ['src/**/*.test.ts'] },
   build: { outDir: 'dist', target: 'es2022', assetsInlineLimit: 0 },
   server: {
     port: 5173,

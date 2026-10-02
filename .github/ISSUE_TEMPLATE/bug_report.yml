@@ -1,0 +1,41 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "Security problems go through the Security tab (private report), never a public issue."
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open …\n2. Click …"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Roosty version
+      description: Shown in Settings → About and in the admin panel.
+  - type: input
+    id: server
+    attributes:
+      label: Mail server
+      placeholder: "MXroute, Dovecot 2.3, Stalwart, Gmail…"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant lines from `docker compose logs roosty`. Remove email addresses and anything private.
+      render: text

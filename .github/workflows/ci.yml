@@ -44,6 +44,7 @@ jobs:
         run: |
           go test ./internal/mail -run=^$ -fuzz=FuzzSanitize -fuzztime=30s
           go test ./internal/settings -run=^$ -fuzz=FuzzParsePrefs -fuzztime=30s
+          go test ./internal/mail -run=^$ -fuzz=FuzzParse$ -fuzztime=30s
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
@@ -77,7 +78,7 @@ jobs:
         run: go test -race -tags integration -count=1 ./internal/server/
 
   web:
-    name: Web (typecheck, build, audit, size)
+    name: Web (typecheck, unit tests, build, audit, size)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -89,6 +90,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: npx tsc --noEmit -p .
+        working-directory: web
+      - name: Unit tests (Vitest)
+        run: npm test
         working-directory: web
       - run: npm run build
         working-directory: web
