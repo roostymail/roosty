@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/emersion/go-smtp"
+	"github.com/roostymail/roosty/server/internal/mail"
 	"github.com/roostymail/roosty/server/internal/secure"
 	"github.com/roostymail/roosty/server/internal/settings"
 	"github.com/roostymail/roosty/server/internal/store"
@@ -42,10 +43,27 @@ func itEnv(t *testing.T, key, def string) string {
 	return def
 }
 
-func endpoint(t *testing.T, key, def string) settings.Endpoint {
-	host, port, _ := net.SplitHostPort(itEnv(t, key, def))
+func endpoint(addr, security string) settings.Endpoint {
+	host, port, _ := net.SplitHostPort(addr)
 	p, _ := strconv.Atoi(port)
-	return settings.Endpoint{Host: host, Port: p, Security: "none"}
+	if security == "" {
+		security = "none"
+	}
+	return settings.Endpoint{Host: host, Port: p, Security: security}
+}
+
+// smtpAddr returns the test SMTP server, or "" when the server under test has
+// none (e.g. Dovecot alone): messages are then delivered with IMAP APPEND and
+// tests that send mail are skipped.
+func smtpAddr() string {
+	v, ok := os.LookupEnv("ROOSTY_IT_SMTP")
+	if !ok {
+		return "127.0.0.1:3025"
+	}
+	if v == "none" {
+		return ""
+	}
+	return v
 }
 
 type itCtx struct {
@@ -54,12 +72,19 @@ type itCtx struct {
 	smtpAddr             string
 	user1, pass1, user2, pass2 string
 	srv                        *Server
+	ms                         settings.MailServer
+}
+
+func (c *itCtx) needSMTP() {
+	if c.smtpAddr == "" {
+		c.t.Skip("server under test has no SMTP")
+	}
 }
 
 func setupIT(t *testing.T) *itCtx {
 	t.Helper()
 	ctx := &itCtx{t: t,
-		smtpAddr: itEnv(t, "ROOSTY_IT_SMTP", "127.0.0.1:3025"),
+		smtpAddr: smtpAddr(),
 		user1:    itEnv(t, "ROOSTY_IT_USER1", "marina@roosty.test"), pass1: itEnv(t, "ROOSTY_IT_PASS1", "roosty123"),
 		user2: itEnv(t, "ROOSTY_IT_USER2", "ana@roosty.test"), pass2: itEnv(t, "ROOSTY_IT_PASS2", "roosty123"),
 	}
@@ -71,8 +96,14 @@ func setupIT(t *testing.T) *itCtx {
 	t.Cleanup(func() { st.Close() })
 	cfg, _ := settings.NewManager(st)
 	s := settings.Defaults()
-	s.Mail.IMAP = endpoint(t, "ROOSTY_IT_IMAP", "127.0.0.1:3143")
-	s.Mail.SMTP = endpoint(t, "ROOSTY_IT_SMTP", "127.0.0.1:3025")
+	s.Mail.IMAP = endpoint(itEnv(t, "ROOSTY_IT_IMAP", "127.0.0.1:3143"), os.Getenv("ROOSTY_IT_IMAP_SECURITY"))
+	if ctx.smtpAddr != "" {
+		s.Mail.SMTP = endpoint(ctx.smtpAddr, os.Getenv("ROOSTY_IT_SMTP_SECURITY"))
+	} else {
+		s.Mail.SMTP = endpoint("127.0.0.1:1", "none") // unused
+	}
+	s.Mail.SkipTLSVerify = os.Getenv("ROOSTY_IT_SKIP_VERIFY") == "1"
+	ctx.ms = s.Mail
 	s.Access = settings.Access{Mode: "domains", Domains: []string{"roosty.test"}}
 	if err := cfg.Save(s); err != nil {
 		t.Fatal(err)
@@ -87,7 +118,8 @@ func setupIT(t *testing.T) *itCtx {
 	return ctx
 }
 
-// deliver puts a message straight into a mailbox through SMTP.
+// deliver puts a message straight into a mailbox, through SMTP when the
+// server has it and IMAP APPEND otherwise.
 func (c *itCtx) deliver(to, subject, body string, extraHeaders ...string) {
 	c.t.Helper()
 	msg := "From: Remetente Teste <remetente@exemplo.test>\r\nTo: " + to + "\r\nSubject: " + subject +
@@ -99,6 +131,24 @@ func (c *itCtx) deliver(to, subject, body string, extraHeaders ...string) {
 		msg += "Content-Type: text/plain; charset=utf-8\r\n"
 	}
 	msg += "\r\n" + body + "\r\n"
+	if c.smtpAddr == "" {
+		pass := c.pass1
+		if to == c.user2 {
+			pass = c.pass2
+		}
+		ic, err := mail.Login(c.ms, mail.Creds{Email: to, Password: pass}, nil)
+		if err != nil {
+			c.t.Fatalf("deliver (imap): %v", err)
+		}
+		defer ic.Close()
+		cmd := ic.Append("INBOX", int64(len(msg)), nil)
+		cmd.Write([]byte(msg))
+		cmd.Close()
+		if _, err := cmd.Wait(); err != nil {
+			c.t.Fatalf("deliver (append): %v", err)
+		}
+		return
+	}
 	sc, err := smtp.Dial(c.smtpAddr)
 	if err != nil {
 		c.t.Fatalf("deliver: %v", err)
@@ -146,6 +196,18 @@ func waitFor(t *testing.T, cl *client, mailbox, token string) map[string]any {
 	}
 	t.Fatalf("message %s never arrived in %s", token, mailbox)
 	return nil
+}
+
+// boxByRole finds a mailbox by its role, whatever the server calls it.
+func boxByRole(t *testing.T, cl *client, role string) string {
+	t.Helper()
+	for _, m := range apiCall(t, cl, "Mailbox/get", `{}`)["list"].([]any) {
+		if mb := m.(map[string]any); mb["role"] == role {
+			return mb["id"].(string)
+		}
+	}
+	t.Fatalf("no mailbox with role %s", role)
+	return ""
 }
 
 func gone(t *testing.T, cl *client, mailbox, token string) bool {
@@ -201,12 +263,14 @@ func TestIT_ReceiveReadFlagMoveDelete(t *testing.T) {
 	if !gone(t, cl, "INBOX", token) {
 		t.Fatal("message still in INBOX after archive")
 	}
-	archived := waitFor(t, cl, "Archive", token)
+	archive := boxByRole(t, cl, "archive")
+	archived := waitFor(t, cl, archive, token)
 
-	apiCall(t, cl, "Email/set", fmt.Sprintf(`{"mailbox":"Archive","ids":[%v],"destroy":true}`, archived["id"]))
-	trashed := waitFor(t, cl, "Trash", token)
-	apiCall(t, cl, "Email/set", fmt.Sprintf(`{"mailbox":"Trash","ids":[%v],"destroy":true}`, trashed["id"]))
-	if !gone(t, cl, "Trash", token) {
+	apiCall(t, cl, "Email/set", fmt.Sprintf(`{"mailbox":%q,"ids":[%v],"destroy":true}`, archive, archived["id"]))
+	trash := boxByRole(t, cl, "trash")
+	trashed := waitFor(t, cl, trash, token)
+	apiCall(t, cl, "Email/set", fmt.Sprintf(`{"mailbox":%q,"ids":[%v],"destroy":true}`, trash, trashed["id"]))
+	if !gone(t, cl, trash, token) {
 		t.Fatal("destroy in Trash must delete permanently")
 	}
 }
@@ -236,6 +300,7 @@ func TestIT_SanitizedHTMLAndTrackers(t *testing.T) {
 
 func TestIT_SendWithAttachmentBetweenAccounts(t *testing.T) {
 	c := setupIT(t)
+	c.needSMTP()
 	token := "tok" + secure.Token(6)
 	g := c.login(c.user1, c.pass1)
 
@@ -259,7 +324,7 @@ func TestIT_SendWithAttachmentBetweenAccounts(t *testing.T) {
 	_ = json.Unmarshal(b, &up)
 
 	apiCall(t, g, "Email/send", fmt.Sprintf(`{"fromName":"Marina","to":[%q],"subject":"Envio %s","html":"<p>Oi <b>Ana</b> %s</p><script>x</script>","attachments":[%q]}`, c.user2, token, token, up.ID))
-	sent := waitFor(t, g, "Sent", token)
+	sent := waitFor(t, g, boxByRole(t, g, "sent"), token)
 	if sent["hasAttachment"] != true {
 		t.Error("copy in Sent should have the attachment")
 	}
@@ -319,7 +384,7 @@ func TestIT_DraftSaved(t *testing.T) {
 	token := "tok" + secure.Token(6)
 	cl := c.login(c.user1, c.pass1)
 	apiCall(t, cl, "Email/saveDraft", fmt.Sprintf(`{"subject":"Rascunho %s","html":"<p>texto</p>"}`, token))
-	if d := waitFor(t, cl, "Drafts", token); d == nil {
+	if d := waitFor(t, cl, boxByRole(t, cl, "drafts"), token); d == nil {
 		t.Fatal("draft not saved")
 	}
 }
