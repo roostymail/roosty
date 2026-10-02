@@ -1,0 +1,24 @@
+From: MXroute Support <support@mxroute.test>
+To: Marina Gonçalves <marina@roosty.test>
+Subject: =?UTF-8?Q?Seu_dom=C3=ADnio_roosty.dev_foi_verificado?=
+Date: Thu, 01 Oct 2026 09:42:00 -0300
+Message-ID: <verify-1@mxroute.test>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b1"
+
+--b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Olá, Marina,
+
+Os registros DNS de roosty.dev foram verificados com sucesso. DKIM, SPF e MX estão corretos e o envio já está liberado para todas as caixas do domínio.
+
+Abraços,
+Equipe MXroute
+--b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<p>Olá, Marina,</p><p>Os registros DNS de <b>roosty.dev</b> foram verificados com sucesso. DKIM, SPF e MX estão corretos e o envio já está liberado para todas as caixas do domínio.</p><p>Se você usa um cliente de email, configure IMAP na porta 993 e SMTP na porta 465, ambos com SSL.</p><p>Abraços,<br>Equipe MXroute</p>
+--b1--

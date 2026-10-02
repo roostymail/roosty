@@ -1,0 +1,22 @@
+From: Roosty Newsletter <news@roosty.test>
+To: Marina Gonçalves <marina@roosty.test>
+Subject: Novidades de setembro
+Date: Tue, 29 Sep 2026 10:00:00 -0300
+Message-ID: <news-9@roosty.test>
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="b5"
+
+--b5
+Content-Type: text/html; charset=utf-8
+
+<div style="font-family:Georgia,serif;max-width:560px"><img src="cid:logo@roosty" alt="logo" width="48" height="48"><h1 style="color:#55613a">Novidades de setembro</h1><p>Lançamos o site roosty.dev, publicamos o pacote no npm e as imagens no Docker Hub.</p><p>Obrigado por acompanhar!</p></div>
+--b5
+Content-Type: image/png
+Content-ID: <logo@roosty>
+Content-Disposition: inline; filename="logo.png"
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAQklEQVR4nO3OQQ0AIAwAsfnFCwJQ
+iwuOR5MK6OyzvjL5QEhISKgeCAkJCdUDISEhoXogJCQkVA+EhISE6oGQkNBjFyfbK9PqxrTOAAAA
+AElFTkSuQmCC
+--b5--

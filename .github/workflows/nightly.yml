@@ -1,0 +1,35 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { pkg: ./internal/mail, target: FuzzSanitize }
+          - { pkg: ./internal/settings, target: FuzzParsePrefs }
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - run: go test ${{ matrix.pkg }} -run=^$ -fuzz=${{ matrix.target }} -fuzztime=10m
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: fuzz-crashers-${{ matrix.target }}
+          path: server/**/testdata/fuzz/

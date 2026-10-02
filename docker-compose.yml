@@ -1,0 +1,41 @@
+# Local test stack: Roosty Mail + a test mail server (GreenMail) with sample messages.
+#
+#   docker compose up --build
+#   Webmail: http://localhost:8080        (marina@roosty.test / roosty123, ana@roosty.test / roosty123)
+#   Admin:   http://localhost:8080/admin  (setup code: roosty-local-setup)
+services:
+  roosty:
+    build: .
+    image: roostymail/roosty:dev
+    ports: ["8080:8080"]
+    environment:
+      # Mail server (locked in the admin panel because they come from the environment)
+      ROOSTY_IMAP_HOST: greenmail
+      ROOSTY_IMAP_PORT: "3143"
+      ROOSTY_IMAP_SECURITY: none # test server only; use tls or starttls in production
+      ROOSTY_SMTP_HOST: greenmail
+      ROOSTY_SMTP_PORT: "3025"
+      ROOSTY_SMTP_SECURITY: none
+      ROOSTY_ALLOWED_DOMAINS: roosty.test
+      # Fixed first-run code for local testing. Leave unset in production to get a random one in the logs.
+      ROOSTY_SETUP_TOKEN: roosty-local-setup
+    volumes: ["roosty-data:/data"]
+    depends_on: [greenmail]
+
+  greenmail:
+    image: greenmail/standalone:2.1.14
+    environment:
+      GREENMAIL_OPTS: >-
+        -Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0
+        -Dgreenmail.users=marina:roosty123@roosty.test,ana:roosty123@roosty.test
+        -Dgreenmail.users.login=email
+
+  seed:
+    image: curlimages/curl:8.16.0
+    depends_on: [greenmail]
+    volumes: ["./deploy/dev/seed:/seed:ro"]
+    entrypoint: ["/bin/sh", "/seed/send.sh"]
+    restart: "no"
+
+volumes:
+  roosty-data:
