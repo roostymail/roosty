@@ -1,0 +1,21 @@
+From: Remetente <r@exemplo.test>
+To: marina@roosty.test
+Subject: Fwd: original
+Date: Thu, 01 Oct 2026 10:00:00 -0300
+Message-ID: <x@exemplo.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b"
+
+--b
+Content-Type: text/plain
+
+segue abaixo
+--b
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename=original.eml
+
+From: a@b.test
+Subject: original
+
+corpo original
+--b--

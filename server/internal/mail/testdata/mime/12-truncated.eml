@@ -1,0 +1,18 @@
+From: Remetente <r@exemplo.test>
+To: marina@roosty.test
+Subject: Truncado
+Date: Thu, 01 Oct 2026 10:00:00 -0300
+Message-ID: <x@exemplo.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b"
+
+--b
+Content-Type: text/plain
+
+comeco do texto
+--b
+Content-Type: application/pdf; name=x.pdf
+Content-Disposition: attachment; filename=x.pdf
+Content-Transfer-Encoding: base64
+
+JVBER

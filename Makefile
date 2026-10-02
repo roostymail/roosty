@@ -16,10 +16,12 @@ check:          ## Check every tracked file for secrets and private data
 test:           ## Run the Go tests
 	cd server && go test ./...
 
-itest:          ## Integration tests against a real IMAP/SMTP server in Docker
-	docker compose -p roosty-itest -f deploy/test/compose.yml up -d --wait
-	cd server && ROOSTY_IT_IMAP=127.0.0.1:13143 ROOSTY_IT_SMTP=127.0.0.1:13025 go test -tags integration -count=1 ./internal/server/ ; \
-	  status=$$?; cd .. && docker compose -p roosty-itest -f deploy/test/compose.yml down; exit $$status
+itest:          ## Integration tests against GreenMail and Dovecot in Docker
+	docker compose -p roosty-itest -f deploy/test/compose.yml up -d
+	@sleep 4
+	cd server && ROOSTY_IT_IMAP=127.0.0.1:13143 ROOSTY_IT_SMTP=127.0.0.1:13025 go test -tags integration -count=1 ./internal/server/ ; s1=$$?; \
+	  ROOSTY_IT_IMAP=127.0.0.1:13144 ROOSTY_IT_IMAP_SECURITY=starttls ROOSTY_IT_SKIP_VERIFY=1 ROOSTY_IT_SMTP=none go test -tags integration -count=1 ./internal/server/ ; s2=$$?; \
+	  cd .. && docker compose -p roosty-itest -f deploy/test/compose.yml down; exit $$((s1 + s2))
 
 e2e:            ## Browser walkthrough against a fresh Docker stack
 	docker compose down -v && docker compose up --build -d

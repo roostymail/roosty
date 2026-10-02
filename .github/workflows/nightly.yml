@@ -18,6 +18,7 @@ jobs:
         include:
           - { pkg: ./internal/mail, target: FuzzSanitize }
           - { pkg: ./internal/settings, target: FuzzParsePrefs }
+          - { pkg: ./internal/mail, target: FuzzParse$ }
     defaults:
       run:
         working-directory: server

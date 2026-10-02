@@ -1,0 +1,19 @@
+From: Remetente <r@exemplo.test>
+To: marina@roosty.test
+Subject: Anexo encoded-word
+Date: Thu, 01 Oct 2026 10:00:00 -0300
+Message-ID: <x@exemplo.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="b"
+
+--b
+Content-Type: text/plain
+
+corpo
+--b
+Content-Type: application/pdf; name="=?UTF-8?B?Y290YcOnw6NvLnBkZg==?="
+Content-Disposition: attachment
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQgZmFrZQ==
+--b--

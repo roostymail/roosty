@@ -11,7 +11,7 @@ export const THEMES: Theme[] = [
   { id: 'navy', name: 'Navy', dark: true, chrome: '#0A1424', list: '#0E1A2E', surface: '#16243C', border: '#22334F', text: '#E4EAF4', muted: '#8D9BB4', accent: '#F2B84B', paper: '#FFFFFF' },
   { id: 'roxo', name: 'Roxo', dark: true, chrome: '#150F27', list: '#1B1530', surface: '#251D3E', border: '#33294F', text: '#ECE7F7', muted: '#A398BD', accent: '#B38CFF', paper: '#FFFFFF' },
   { id: 'bege', name: 'Bege', dark: false, chrome: '#EFE9DC', list: '#F7F2EA', surface: '#E8DFD0', border: '#DDD2C0', text: '#2B2620', muted: '#776C5E', accent: '#2A6F5E', paper: '#FFFDF9' },
-  { id: 'sepia', name: 'Sépia', dark: false, chrome: '#E9DCBF', list: '#F1E7D0', surface: '#E2D3B2', border: '#D4C29C', text: '#3B2F1E', muted: '#7A6849', accent: '#8A4B2A', paper: '#FBF5E6' },
+  { id: 'sepia', name: 'Sépia', dark: false, chrome: '#E9DCBF', list: '#F1E7D0', surface: '#E2D3B2', border: '#D4C29C', text: '#3B2F1E', muted: '#6E5D40', accent: '#8A4B2A', paper: '#FBF5E6' },
   { id: 'contraste', name: 'Alto contraste', dark: true, chrome: '#000000', list: '#000000', surface: '#1A1A1A', border: '#FFFFFF', text: '#FFFFFF', muted: '#E0E0E0', accent: '#FFD400', paper: '#FFFFFF' },
   { id: 'floresta', name: 'Floresta', dark: true, chrome: '#0F1A16', list: '#13201B', surface: '#1C2C25', border: '#293C33', text: '#E3EDE7', muted: '#93A89C', accent: '#6FCF97', paper: '#FFFFFF' },
   { id: 'nevoa', name: 'Névoa', dark: false, chrome: '#E8EDF2', list: '#F3F6F9', surface: '#DDE4EC', border: '#CFD8E2', text: '#1C2530', muted: '#5E6B7A', accent: '#0F7B8A', paper: '#FFFFFF' },

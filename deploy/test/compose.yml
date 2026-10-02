@@ -1,6 +1,6 @@
 # Mail servers for integration tests (make itest).
 services:
-  greenmail:
+  greenmail: # IMAP + SMTP, plain text, lenient
     image: greenmail/standalone:2.1.14
     environment:
       GREENMAIL_OPTS: >-
@@ -8,3 +8,9 @@ services:
         -Dgreenmail.users=marina:roosty123@roosty.test,ana:roosty123@roosty.test
         -Dgreenmail.users.login=email
     ports: ["127.0.0.1:13143:3143", "127.0.0.1:13025:3025"]
+
+  dovecot: # IMAP4rev2 with STARTTLS required, SPECIAL-USE, the server most providers run
+    image: dovecot/dovecot:2.4.5
+    environment:
+      USER_PASSWORD: roosty123 # any user name logs in with this password
+    ports: ["127.0.0.1:13144:31143"]

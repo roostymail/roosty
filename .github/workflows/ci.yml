@@ -44,21 +44,25 @@ jobs:
         run: |
           go test ./internal/mail -run=^$ -fuzz=FuzzSanitize -fuzztime=30s
           go test ./internal/settings -run=^$ -fuzz=FuzzParsePrefs -fuzztime=30s
+          go test ./internal/mail -run=^$ -fuzz=FuzzParse$ -fuzztime=30s
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   integration:
-    name: Integration (GreenMail)
+    name: Integration (${{ matrix.server }})
     runs-on: ubuntu-24.04
-    services:
-      greenmail:
-        image: greenmail/standalone:2.1.14
-        env:
-          GREENMAIL_OPTS: >-
-            -Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0
-            -Dgreenmail.users=marina:roosty123@roosty.test,ana:roosty123@roosty.test
-            -Dgreenmail.users.login=email
-        ports: ["13143:3143", "13025:3025"]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - server: greenmail
+            imap: 127.0.0.1:13143
+            smtp: 127.0.0.1:13025
+            security: none
+          - server: dovecot
+            imap: 127.0.0.1:13144
+            smtp: none
+            security: starttls
     defaults:
       run:
         working-directory: server
@@ -68,16 +72,24 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
+      - name: Start ${{ matrix.server }}
+        working-directory: .
+        run: docker compose -f deploy/test/compose.yml up -d ${{ matrix.server }}
       - name: Wait for the mail server
-        run: for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/13143) 2>/dev/null && break; sleep 1; done
+        run: |
+          port="${{ matrix.imap }}"; port="${port##*:}"
+          for i in $(seq 1 60); do (echo > /dev/tcp/127.0.0.1/$port) 2>/dev/null && break; sleep 1; done
+          sleep 3
       - name: Integration tests
         env:
-          ROOSTY_IT_IMAP: 127.0.0.1:13143
-          ROOSTY_IT_SMTP: 127.0.0.1:13025
-        run: go test -race -tags integration -count=1 ./internal/server/
+          ROOSTY_IT_IMAP: ${{ matrix.imap }}
+          ROOSTY_IT_SMTP: ${{ matrix.smtp }}
+          ROOSTY_IT_IMAP_SECURITY: ${{ matrix.security }}
+          ROOSTY_IT_SKIP_VERIFY: "1"
+        run: go test -race -tags integration -count=1 -v ./internal/server/ 2>&1 | tee /tmp/it.log | grep -E '^(--- |ok|FAIL|PASS)'; exit ${PIPESTATUS[0]}
 
   web:
-    name: Web (typecheck, build, audit, size)
+    name: Web (typecheck, unit tests, build, audit, size)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -89,6 +101,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
         working-directory: web
       - run: npx tsc --noEmit -p .
+        working-directory: web
+      - name: Unit tests (Vitest)
+        run: npm test
         working-directory: web
       - run: npm run build
         working-directory: web

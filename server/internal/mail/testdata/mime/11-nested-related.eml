@@ -1,0 +1,38 @@
+From: Remetente <r@exemplo.test>
+To: marina@roosty.test
+Subject: Aninhado
+Date: Thu, 01 Oct 2026 10:00:00 -0300
+Message-ID: <x@exemplo.test>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="m"
+
+--m
+Content-Type: multipart/alternative; boundary="a"
+
+--a
+Content-Type: text/plain
+
+versao texto
+--a
+Content-Type: multipart/related; boundary="r"
+
+--r
+Content-Type: text/html; charset=utf-8
+
+<p>versao html <img src="cid:logo1"></p>
+--r
+Content-Type: image/png
+Content-ID: <logo1>
+Content-Disposition: inline
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+--r--
+--a--
+--m
+Content-Type: text/csv; name=dados.csv
+Content-Disposition: attachment; filename=dados.csv
+
+a,b
+1,2
+--m--
